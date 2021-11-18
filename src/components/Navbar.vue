@@ -31,25 +31,7 @@
         <b-nav-item v-b-modal.tagModal>
           Tags
         </b-nav-item>
-        <b-nav-item-dropdown
-          text="Options"
-          boundary="viewport"
-        >
-          <b-dropdown-item-button>
-            <b-form-checkbox v-model="checkboxEnableNotifications">
-              Enable Notifications
-            </b-form-checkbox>
-          </b-dropdown-item-button>
-          <b-dropdown-item-button>
-            <b-form-checkbox v-model="timeFormat">
-              Use 24-hour Clock
-            </b-form-checkbox>
-          </b-dropdown-item-button>
-          <div class="dropdown-divider" />
-          <b-dropdown-item-button v-b-modal.dataModal>
-            Data
-          </b-dropdown-item-button>
-        </b-nav-item-dropdown>
+        <NavbarOptionsDropdown />
       </ul>
     </div>
   </nav>
@@ -57,10 +39,15 @@
 
 <script>
 import time from '../lib/time'
-import { mapMutations, mapState } from 'vuex'
+import { mapMutations } from 'vuex'
+import NavbarOptionsDropdown from './dropdowns/NavbarOptionsDropdown'
 
 export default {
   name: 'Navbar',
+  
+  components: {
+    NavbarOptionsDropdown
+  },
   
   mixins: [time],
   
@@ -72,31 +59,8 @@ export default {
   },
   
   computed: {
-    ...mapState([
-      'globalNotificationsEnabled',
-      'timeFormat24'
-    ]),
-    
     displayTime () {
       return this.displayTimeHuman(this.currentDate)
-    },
-    
-    checkboxEnableNotifications: {
-      get () {
-        return this.globalNotificationsEnabled
-      },
-      set (newValue) {
-        this.setNotificationsEnabled(newValue)
-      }
-    },
-    
-    timeFormat: {
-      get () {
-        return this.timeFormat24
-      },
-      set (newValue) {
-        this.setTimeFormat(newValue)
-      }
     }
   },
   
