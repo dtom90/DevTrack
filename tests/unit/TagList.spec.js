@@ -10,11 +10,11 @@ localVue.use(Vuex)
 
 const myColorManager = new ColorManager()
 
-const tagValues = ['one tag', 'another tag']
+const tagValues = ['tag-1', 'tag-2']
 const state = {
   tags: {
-    'one tag': myColorManager.getRandomColor(),
-    'another tag': myColorManager.getRandomColor()
+    'tag-1': { tagName: 'first tag', color: myColorManager.getRandomColor() },
+    'tag-2': { tagName: 'second tag', color: myColorManager.getRandomColor() }
   },
   tagOrder: tagValues
 }
@@ -24,7 +24,7 @@ const getters = {
 }
 
 const actions = {
-  addTaskTag: jest.fn(),
+  addTaskTagByName: jest.fn(),
   removeTaskTag: jest.fn()
 }
 
@@ -53,8 +53,8 @@ describe('TagList', () => {
     const tags = wrapper.findAll('.tag')
     
     expect(tags.length).toBe(2)
-    expect(tags.at(0).text()).toMatch(tagValues[0])
-    expect(tags.at(1).text()).toMatch(tagValues[1])
+    expect(tags.at(0).text()).toMatch('first tag')
+    expect(tags.at(1).text()).toMatch('second tag')
     
     // const removeTagBtn = tags.at(0).findAll('button').at(1)
     // expect(removeTagBtn.text()).toEqual('×')
@@ -87,10 +87,10 @@ describe('TagList', () => {
     
     await addTagInput.setValue('some tag')
     expect(addTagInput.element.value).toBe('some tag')
-    expect(wrapper.vm.newTag).toBe('some tag')
+    expect(wrapper.vm.inputTagName).toBe('some tag')
     
     await addTagInput.trigger('keyup.enter')
-    expect(actions.addTaskTag).toHaveBeenCalledWith(expect.anything(), { taskId, tagName: 'some tag' })
+    expect(actions.addTaskTagByName).toHaveBeenCalledWith(expect.anything(), { taskId, tagName: 'some tag' })
     expect(addTagInput.element.value).toBe('')
     
   })

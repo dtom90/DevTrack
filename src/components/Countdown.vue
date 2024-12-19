@@ -417,7 +417,6 @@ export default {
 
 #countdown-menu {
   width: 210px;
-  padding: 8px;
 }
 
 /*noinspection CssUnresolvedCustomProperty*/

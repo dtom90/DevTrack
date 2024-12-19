@@ -5,7 +5,7 @@ import ColorManager from 'color-manager'
 const actions = {
   async loadInitialData ({ commit }) {
     const tasks = await dexieDb.tasks.orderBy('order').toArray()
-    const tags = await dexieDb.tags.toArray()
+    const tags = await dexieDb.tags.orderBy('order').toArray()
     const taskTagMaps = await dexieDb.taskTagMap.toArray()
     const logs = await dexieDb.logs.toArray()
     const settings = await dexieDb.settings.toArray()
@@ -19,7 +19,7 @@ const actions = {
       const newTask = {
         id: 'task-' + nanoid(),
         name: taskName,
-        tags: state.addSelectedTags && state.selectedTags.length > 0 ? [...state.selectedTags] : [],
+        tags: state.addSelectedTags && state.selectedTagIds.length > 0 ? [...state.selectedTagIds] : [],
         notes: '',
         order: count,
         log: [],
@@ -174,40 +174,99 @@ const actions = {
     commit('deleteInterval', { logId, taskId: log.taskId })
   },
   
-  async addTaskTag ({ state, commit }, { taskId, tagName }) {
-    const newTagName = tagName.trim()
-    if (newTagName) {
+  async addTaskTagByName ({ state, commit }, { taskId, tagName }) {
+    tagName = tagName.trim()
+    if (tagName) {
       const task = state.tasks.find(t => t.id === taskId)
       if (task) {
         let tag = await dexieDb.tags.where('tagName').equals(tagName).first()
-        if (!tag) {
+        const isNewTag = !tag
+        if (isNewTag) {
           const colors = Object.values(state.tags).map(tag => tag.color)
           const colorManager = new ColorManager(colors)
+          // get the maximum order value in all tags in dexie
+          const maxOrder = await dexieDb.tags.orderBy('order').last()
+          const order = maxOrder ? maxOrder.order + 1 : 0
           tag = {
-            tagName: newTagName,
-            color: colorManager.getRandomColor()
+            id: 'tag-' + nanoid(),
+            tagName: tagName,
+            color: colorManager.getRandomColor(),
+            order
           }
           await dexieDb.tags.add(tag)
         }
         await dexieDb.taskTagMap.add({
           id: 'taskTag-' + nanoid(),
           taskId,
-          tagName
+          tagId: tag.id
         })
-        commit('addTaskTag', { taskId, ...tag })
+        commit('addTaskTag', { taskId, tag, isNewTag })
       }
     }
   },
   
-  async removeTaskTag ({ state, commit }, { taskId, tagName }) {
+  async addTaskTagById ({ state, commit }, { taskId, tagId }) {
+    const task = state.tasks.find(t => t.id === taskId)
+    if (task) {
+      const tag = state.tags[tagId]
+      if (tag) {
+        await dexieDb.taskTagMap.add({
+          id: 'taskTag-' + nanoid(),
+          taskId,
+          tagId
+        })
+        commit('addTaskTag', { taskId, tag, isNewTag: false })
+      }
+    }
+  },
+  
+  async setTagName ({ state, commit }, { tagId, newTagName }) {
+    const tag = await dexieDb.tags.where('id').equals(tagId).first()
+    if (tag) {
+      if (newTagName !== tag.tagName) {
+        const existingTagWithName = await dexieDb.tags.where('tagName').equals(newTagName).first()
+        if (existingTagWithName) {
+          alert('Error: the new tag name you entered already exists. Please rename it to something else.')
+        } else {
+          tag.tagName = newTagName
+          await dexieDb.tags.put(tag)
+          commit('updateTag', { tagId, tag })
+        }
+      }
+    }
+  },
+  
+  async setTagColor ({ state, commit }, { tagId, newTagColor }) {
+    const tag = await dexieDb.tags.where('id').equals(tagId).first()
+    if (tag && newTagColor !== tag.color) {
+      tag.color = newTagColor
+      await dexieDb.tags.put(tag)
+      commit('updateTag', { tagId, tag })
+    }
+  },
+  
+  async reorderTags ({ state, commit }, { newOrder }) {
+    const reorderedTags = []
+    for (const [i, tagId] of newOrder.entries()) {
+      const tag = state.tags[tagId]
+      if (tag.order !== i) {
+        tag.order = i
+        await dexieDb.tags.put(tag)
+        reorderedTags.push(tag)
+      }
+    }
+    commit('updateTagOrder', { reorderedTags })
+  },
+  
+  async removeTaskTag ({ state, commit }, { taskId, tagId }) {
     await dexieDb.taskTagMap
       .where('taskId').equals(taskId)
-      .and(tag => tag.tagName === tagName)
+      .and(taskTagMap => taskTagMap.tagId === tagId)
       .delete()
     
     const newTags = await dexieDb.taskTagMap.where('taskId').equals(taskId).toArray()
-    const newTagNames = newTags.map(tag => tag.tagName)
-    commit('updateTaskTags', { taskId, newTagNames })
+    const newTagIds = newTags.map(tag => tag.tagId)
+    commit('updateTask', { taskId, taskUpdates: { tags: newTagIds } })
   }
   
 }

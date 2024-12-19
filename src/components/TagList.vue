@@ -19,25 +19,25 @@
     
     <div id="elements">
       <div
-        v-for="tagName in sortedTagList"
-        :key="tagName"
+        v-for="tagId in sortedTagList"
+        :key="tagId"
         class="tag btn-group"
       >
         <button
           class="tag-name btn"
-          :style="`backgroundColor: ${tags[tagName].color}`"
+          :style="`backgroundColor: ${tags[tagId].color}`"
           :title="selectText"
-          @click="modal ? viewActivityModal(tagName) : selectTag(tagName, $event)"
+          @click="modal ? viewActivityModal(tagId) : selectTag(tagId, $event)"
         >
-          {{ tagName }}
+          {{ tags[tagId].tagName }}
         </button>
         <button
           v-if="removeTag"
           class="tag-close btn"
-          :style="`backgroundColor: ${tags[tagName].color}`"
+          :style="`backgroundColor: ${tags[tagId].color}`"
           :title="removeText"
           aria-label="Close"
-          @click.stop="removeTag({tagName})"
+          @click.stop="removeTag({tagId})"
         >
           <font-awesome-icon icon="times" />
         </button>
@@ -102,13 +102,13 @@
               class="btn-group-vertical"
             >
               <button
-                v-for="tagName in availableTags(taskId, newTag)"
-                :key="tagName"
+                v-for="tag in availableTags(taskId, inputTagName)"
+                :key="tag.id"
                 class="tag-option btn btn-light"
-                :style="`backgroundColor: ${tags[tagName].color}`"
-                @click="addTag(tagName)"
+                :style="`backgroundColor: ${tag.color}`"
+                @click="addTag({ tagId: tag.id })"
               >
-                {{ tagName }}
+                {{ tag.tagName }}
               </button>
             </div>
           </div>
@@ -116,14 +116,14 @@
             v-if="showTagInput"
             id="addTagInput"
             ref="addTagInput"
-            v-model="newTag"
+            v-model="inputTagName"
             type="text"
             class="form-control"
             placeholder="add new tag"
             @input="tagInputChange"
             @focus="tagInputChange"
             @blur="clickOutside"
-            @keyup.enter="addTag(newTag)"
+            @keyup.enter="addTag({ tagName: inputTagName })"
           >
         </div>
       </div>
@@ -173,7 +173,7 @@ export default {
   
   data: () => ({
     editing: false,
-    newTag: '',
+    inputTagName: '',
     tagOptions: [],
     showTagInput: false
   }),
@@ -211,7 +211,8 @@ export default {
   methods: {
     
     ...mapActions([
-      'addTaskTag'
+      'addTaskTagById',
+      'addTaskTagByName'
     ]),
     
     ...mapMutations([
@@ -229,19 +230,23 @@ export default {
     },
     
     tagInputChange: function () {
-      this.tagOptions = this.availableTags(this.taskId, this.newTag)
+      this.tagOptions = this.availableTags(this.taskId, this.inputTagName)
     },
     
-    addTag: function (tagName) {
-      this.addTaskTag({ taskId: this.taskId, tagName })
-      this.newTag = ''
+    addTag: function ({ tagId, tagName }) {
+      if (tagId != null) {
+        this.addTaskTagById({ taskId: this.taskId, tagId })
+      } else if (tagName != null && tagName.length) {
+        this.addTaskTagByName({ taskId: this.taskId, tagName })
+      }
+      this.inputTagName = ''
       this.tagInputChange()
-      this.tagOptions = this.availableTags(this.taskId, this.newTag)
+      this.tagOptions = this.availableTags(this.taskId, this.inputTagName)
       this.$refs.addTagInput.focus()
     },
     
-    viewActivityModal: function (newTag) {
-      this.setModalTag({ newTag })
+    viewActivityModal: function (tagId) {
+      this.setModalTag({ tagId })
       this.$root.$emit('bv::toggle::modal', 'activityModal')
     },
     

@@ -167,9 +167,9 @@
 //
 //     it('should add a task with selectedTag', async () => {
 //
-//       expect(myState.selectedTags).to.deep.equal([])
+//       expect(myState.selectedTagIds).to.deep.equal([])
 //       mutations.selectTag(myState, { tag: 'new tag a' })
-//       expect(myState.selectedTags).to.deep.equal(['new tag a'])
+//       expect(myState.selectedTagIds).to.deep.equal(['new tag a'])
 //
 //       await actions.addTask({ state: myState, commit: store.commit }, { name: 'my tagged task' })
 //       const taggedTask = myState.tasks.filter(t => t.name === 'my tagged task')[0]

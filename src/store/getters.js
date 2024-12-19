@@ -24,11 +24,15 @@ const getters = {
     return state.completedOrder === 'Recent' ? completedTasks.reverse() : completedTasks
   },
   
-  unselectedTags: state => Object.keys(state.tags).filter(tag => !state.selectedTags.includes(tag)),
+  unselectedTags: state => Object.keys(state.tags).filter(tag => !state.selectedTagIds.includes(tag)),
   
-  availableTags: state => (id, snip) => Object.keys(state.tags)
-    .filter(tag => tag.startsWith(snip) && !state.tasks.find(t => t.id === id).tags.includes(tag))
-    .sort((a, b) => state.tagOrder.indexOf(a) - state.tagOrder.indexOf(b)),
+  availableTags: state => (taskId, newTagName) => {
+    const task = state.tasks.find(t => t.id === taskId)
+    if (!task) return []
+    return Object.values(state.tags)
+      .filter(tag => !task.tags.includes(tag.id) && tag.tagName.startsWith(newTagName))
+      .sort((a, b) => state.tagOrder.indexOf(a) - state.tagOrder.indexOf(b))
+  },
   
   tagActivity: state => tag => state.tasks.filter(task => task.tags.includes(tag))
     .map(task => {

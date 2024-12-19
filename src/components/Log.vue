@@ -18,59 +18,63 @@
         v-for="(event, index) in log"
         :key="index"
       >
-        <td v-if="event.task">
-          <span>{{ event.task }}</span>
-        </td>
-        
-        <td v-if="event.started">
-          <span>Started {{ displayTimeHuman(event.started) }}</span>
-        </td>
-        <td>
-          <font-awesome-icon icon="arrow-right" />
-        </td>
-        <td>
-          <span>{{ event.stopped ? 'Stopped' : 'Running' }} {{ displayTimeHuman(event.stopped || Date.now()) }}</span>
-        </td>
-        <td v-if="event.timeSpent">
-          <span>Time Spent: {{ displayDuration(event.timeSpent) }}</span>
-        </td>
-        <td
-          v-if="!event.task && !event.completed"
-          class="btn-container"
-        >
-          <div
-            :ref="`intervalMenu${index}`"
-            class="dropright"
+        <template v-if="!event.completed">
+          <td v-if="event.task">
+            <span>{{ event.task }}</span>
+          </td>
+          
+          <td v-if="event.started">
+            <span>Started {{ displayTimeHuman(event.started) }}</span>
+          </td>
+          <td>
+            <font-awesome-icon icon="arrow-right" />
+          </td>
+          <td>
+            <span>{{ event.stopped ? 'Stopped' : 'Running' }} {{ displayTimeHuman(event.stopped || Date.now()) }}</span>
+          </td>
+          <td v-if="event.timeSpent">
+            <span>Time Spent: {{ displayDuration(event.timeSpent) }}</span>
+          </td>
+          <td
+            v-if="!event.task && !event.completed"
+            class="btn-container"
           >
-            <button
-              class="btn btn-light interval-menu-btn"
-              data-toggle="dropdown"
-              data-boundary="viewport"
-            >
-              <font-awesome-icon icon="ellipsis-v" />
-            </button>
             <div
-              class="dropdown-menu"
-              style="padding: 0;"
+              :ref="`intervalMenu${index}`"
+              class="dropright"
             >
               <button
-                class="btn btn-danger"
-                style="width: 100%"
-                @click="deleteInterval({ log: event, index })"
+                class="btn btn-light interval-menu-btn"
+                data-toggle="dropdown"
+                data-boundary="viewport"
               >
-                Delete Interval
+                <font-awesome-icon icon="ellipsis-v" />
               </button>
+              <div
+                class="dropdown-menu"
+                style="padding: 0;"
+              >
+                <button
+                  class="btn btn-danger"
+                  style="width: 100%"
+                  @click="deleteInterval({ log: event, index })"
+                >
+                  Delete Interval
+                </button>
+              </div>
             </div>
-          </div>
-        </td>
+          </td>
+        </template>
         
-        <td v-if="event.completed" />
-        <td v-if="event.completed" />
-        <td v-if="event.completed">
-          <span>Completed {{ displayTimeHuman(event.completed) }}</span>
-        </td>
-        <td v-if="event.completed" />
-        <td v-if="event.completed" />
+        <template v-if="event.completed">
+          <td />
+          <td />
+          <td>
+            <span>Completed {{ displayTimeHuman(event.completed) }}</span>
+          </td>
+          <td />
+          <td />
+        </template>
       </tr>
     </table>
   </div>

@@ -7,11 +7,11 @@
     <button
       type="button"
       class="btn tag-button dropdown-toggle"
-      :style="`backgroundColor: ${tagProperties.color}`"
+      :style="`backgroundColor: ${tag.color}`"
       data-toggle="dropdown"
       data-boundary="viewport"
     >
-      {{ tagName }}
+      {{ tag.tagName }}
     </button>
     <div
       id="tag-menu"
@@ -22,6 +22,7 @@
       >
         <input
           v-model="newTagName"
+          title="Rename tag"
           @keyup.enter="updateTagName"
         >
         <button
@@ -53,7 +54,7 @@
 
 <script>
 import Sketch from 'vue-color/src/components/Sketch'
-import { mapMutations, mapState } from 'vuex'
+import { mapActions, mapMutations, mapState } from 'vuex'
 
 export default {
   name: 'TagSettingsButton',
@@ -63,7 +64,7 @@ export default {
   },
   
   props: {
-    tagName: {
+    tagId: {
       type: String,
       default: null
     }
@@ -78,46 +79,42 @@ export default {
     ...mapState([
       'tags'
     ]),
-    tagProperties: function () {
-      return this.tags[this.tagName]
-    }
-  },
-  
-  watch: {
-    tag: function (newTag) {
-      this.newTagName = newTag
-      this.color = this.tagProperties.color
+    tag: function () {
+      return this.tags[this.tagId]
     }
   },
   
   mounted () {
-    this.newTagName = this.tagName
-    this.color = this.tagProperties.color
+    this.newTagName = this.tag.tagName
+    this.color = this.tag.color
   },
   
   methods: {
+    ...mapActions([
+      'setTagName',
+      'setTagColor'
+    ]),
+    
     ...mapMutations([
-      'setTagColor',
-      'renameTag',
       'deleteTag'
     ]),
     
     updateTagName () {
-      this.renameTag({
-        oldName: this.tagName,
-        newName: this.newTagName
+      this.setTagName({
+        tagId: this.tagId,
+        newTagName: this.newTagName
       })
       this.$refs.tagSettingsButton.classList.remove('show')
       this.$refs.tagSettingsButton.querySelector('button[data-toggle="dropdown"]').setAttribute('aria-expanded', 'false')
       this.$refs.tagSettingsButton.querySelector('.dropdown-menu').classList.remove('show')
     },
-  
+    
     updateTagColor (value) {
       this.setTagColor({
-        tag: this.tagName,
-        color: value.hex
+        tagId: this.tagId,
+        newTagColor: value.hex
       })
-      this.color = this.tagProperties.color
+      this.color = this.tag.color
     }
   }
 }

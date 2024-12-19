@@ -312,9 +312,9 @@
 //   //
 //   //   it('should add a task with selectedTag', () => {
 //   //
-//   //     expect(myState.selectedTags).toEqual([])
+//   //     expect(myState.selectedTagIds).toEqual([])
 //   //     selectTag(myState, { tag: 'new tag a' })
-//   //     expect(myState.selectedTags).toEqual(['new tag a'])
+//   //     expect(myState.selectedTagIds).toEqual(['new tag a'])
 //   //
 //   //     addTask(myState, { name: 'my tagged task' })
 //   //     const taggedTask = myState.tasks.filter(t => t.name === 'my tagged task')[0]

@@ -331,8 +331,8 @@ export default {
       }
     },
     
-    removeTag ({ tagName }) {
-      this.removeTaskTag({ taskId: this.task.id, tagName })
+    removeTag ({ tagId }) {
+      this.removeTaskTag({ taskId: this.task.id, tagId })
       this.$forceUpdate()
     },
     
@@ -406,7 +406,6 @@ export default {
 }
 
 .dropdown-menu {
-  padding: 8px;
 
   .selected-task-menu {
     margin: 8px;

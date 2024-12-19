@@ -1,19 +1,19 @@
 <template>
   <b-modal
-    v-if="modalTag"
+    v-if="modalTagId"
     id="activityModal"
     size="lg"
     ok-only
   >
     <template v-slot:modal-title>
       <span id="activity-for">Activity for</span>
-      <TagSettingsButton :tag-name="modalTag" />
+      <TagSettingsButton :tag-id="modalTagId" />
     </template>
     <ActivityView
-      v-if="modalTag"
+      v-if="modalTagId"
       id="tagActivity"
-      :element="modalTag"
-      :log="tagActivity(modalTag)"
+      :element="modalTagId"
+      :log="tagActivity(modalTagId)"
     />
   </b-modal>
 </template>
@@ -33,7 +33,7 @@ export default {
   
   computed: {
     ...mapState([
-      'modalTag'
+      'modalTagId'
     ]),
     
     ...mapGetters([
