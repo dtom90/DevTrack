@@ -233,13 +233,13 @@ const actions = {
     }
   },
   
-  async setTagColor ({ state, commit }, { tagId, newTagColor }) {
+  async updateTag ({ state, commit }, { tagId, ...newTagProperties }) {
     const tag = await dexieDb.tags.where('id').equals(tagId).first()
-    if (tag && newTagColor !== tag.color) {
-      tag.color = newTagColor
-      await dexieDb.tags.put(tag)
-      commit('updateTag', { tagId, tag })
+    for (const [key, value] of Object.entries(newTagProperties)) {
+      tag[key] = value
     }
+    await dexieDb.tags.put(tag)
+    commit('updateTag', { tagId, tag })
   },
   
   async reorderTags ({ state, commit }, { newOrder }) {

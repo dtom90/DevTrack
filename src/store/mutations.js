@@ -138,10 +138,6 @@ const mutations = {
     state.tagOrder = reorderedTags.map(tag => tag.id)
   },
   
-  setTagColor (state, payload) {
-    Vue.set(state.tags[payload.tag], 'color', payload.color)
-  },
-  
   upgradeTagColor (state) {
     if (typeof Object.values(state.tags)[0] === 'string') {
       Object.keys(state.tags).map(tagName => {

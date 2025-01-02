@@ -32,7 +32,7 @@ export default {
         return this.$store.state.settings.globalNotificationsEnabled
       },
       set (value) {
-        this.updateSettings(
+        this.updateSetting(
           { key: 'globalNotificationsEnabled', value }
         )
       }
@@ -43,7 +43,7 @@ export default {
         return this.$store.state.settings.timeFormat24
       },
       set (value) {
-        this.updateSettings(
+        this.updateSetting(
           { key: 'timeFormat24', value }
         )
       }
@@ -52,7 +52,7 @@ export default {
   
   methods: {
     ...mapActions([
-      'updateSettings'
+      'updateSetting'
     ])
   }
 }

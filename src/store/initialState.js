@@ -29,7 +29,10 @@ const initialState = {
     
     // Navbar settings
     globalNotificationsEnabled: true,
-    timeFormat24: false
+    timeFormat24: false,
+    DailyTarget: null,
+    WeeklyTarget: null,
+    MonthlyTarget: null
     // totalTarget: {}
   }
 }

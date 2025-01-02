@@ -91,8 +91,7 @@ export default {
   
   methods: {
     ...mapActions([
-      'setTagName',
-      'setTagColor'
+      'setTagName'
     ]),
     
     ...mapMutations([
@@ -110,9 +109,9 @@ export default {
     },
     
     updateTagColor (value) {
-      this.setTagColor({
+      this.updateTag({
         tagId: this.tagId,
-        newTagColor: value.hex
+        color: value.hex
       })
       this.color = this.tag.color
     }

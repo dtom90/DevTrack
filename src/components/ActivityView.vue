@@ -180,7 +180,7 @@ export default {
     ...mapState([
       'tasks',
       'tags',
-      'totalTarget'
+      'settings'
     ]),
     
     isTaskActivity: function () {
@@ -197,13 +197,21 @@ export default {
           return null
         }
         const type = this.chartType + 'Target'
-        const targetElement = this.element === 'All Activity' ? this.totalTarget : this.tags[this.element]
+        const targetElement = this.element === 'All Activity' ? this.settings : this.tags[this.element]
         return targetElement[type]
       },
       set (value) {
-        const targetPayload = this.element === 'All Activity' ? {} : { tag: this.element }
-        targetPayload[this.chartType + 'Target'] = parseFloat(value)
-        this.setTarget(targetPayload)
+        if (this.element === 'All Activity') {
+          this.updateSetting({
+            key: this.chartType + 'Target',
+            value: parseFloat(value)
+          })
+        } else {
+          this.updateTag({
+            tagId: this.element,
+            [this.chartType + 'Target']: parseFloat(value)
+          })
+        }
       }
     },
     
@@ -259,6 +267,8 @@ export default {
   methods: {
     
     ...mapActions([
+      'updateSetting',
+      'updateTag',
       'deleteInterval'
     ]),
     
