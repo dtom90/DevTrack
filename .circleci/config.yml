@@ -1,0 +1,116 @@
+version: 2.1
+
+orbs:
+  macos: circleci/macos@2.5.2
+
+jobs:
+  test-basic:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - checkout
+      - run:
+          name: Run packages audit, lint, and unit tests
+          command: ./docker/test_basic.sh
+  test-cypress:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - checkout
+      - run:
+          name: Build & run production Docker image
+          command: ./docker/prod.sh -d
+      - run:
+          name: Run cypress browser tests against production container
+          command: ./docker/test_cypress.sh
+      - run:
+          name: Stop production Docker contianer
+          command: docker stop devtrack-prod
+
+  build-web:
+    docker:
+      - image: cimg/node:18.20.5
+    steps:
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - add_ssh_keys:
+          fingerprints:
+            - "SHA256:/LoPSzj7Kvn+OYACQ5FIBUzs50HNMACBBIfoiE36EPU"
+      - checkout
+      - run:
+          name: Build GitHub Pages
+          command: ./docker/gh-pages.sh
+      - run:
+          name: Publish to GitHub Pages
+          command: |
+            npm install gh-pages@6.3.0 -g
+            git config user.email "dtom90@users.noreply.github.com"
+            git config user.name "David Thomason"
+            npx gh-pages --dist dist_web --dotfiles --no-history --message "GitHub Pages"
+
+  build-electron:
+    macos:
+      xcode: 16.1.0
+    steps:
+      - macos/install-rosetta
+      - run:
+          name: Install NVM
+          command: |
+            set +e
+            wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.1/install.sh | bash
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+      - checkout
+      - run:
+          name: Set Node Version
+          command: |
+            set +e
+            nvm install v18.20.5
+            nvm alias default v18.20.5
+      - run:
+          name: Install dependencies
+          command: |
+            set +e
+            pip install setuptools
+            yarn
+      - run:
+          name: Reset xcode selection
+          command: sudo xcode-select -r
+      - run:
+          name: Build and release publish Electron app
+          command: yarn run electron:release
+
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - test-basic:
+          filters:
+            branches:
+              ignore:
+                - master
+                - gh-pages
+      - test-cypress:
+          filters:
+            branches:
+              ignore:
+                - master
+                - gh-pages
+  build-deploy:
+    jobs:
+      - build-web:
+          filters:
+            branches:
+              only:
+                - master
+      - build-electron:
+          filters:
+            branches:
+              only:
+                - master
