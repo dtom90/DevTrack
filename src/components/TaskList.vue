@@ -31,8 +31,8 @@
             v-if="settings.selectedTagIds.length > 0"
             label="Filtering on tasks with"
             :tag-list="settings.selectedTagIds"
-            :is-modal="true"
-            :remove-tag-filter="removeTagFilter"
+            :remove-tag="removeTag"
+            :update-filter-operator="updateSelectedTask"
             remove-text="Clear Filter"
           />
           <div
@@ -58,7 +58,7 @@
             v-if="unselectedTags.length > 0"
             :label="settings.selectedTagIds.length > 0 ? 'Add to filter' : 'Filter on'"
             :tag-list="unselectedTags"
-            :select-tag="selectTagFilter"
+            :select-tag="selectTag"
           />
         </div>
       </div>
@@ -330,16 +330,32 @@ export default {
       this.newTaskName = ''
     },
 
-    async selectTagFilter (tagId, e) {
+    async selectTag (tagId, e) {
       e.stopPropagation()
       await this.addTagFilter({ tagId })
-      // Select some task with the selected tag
-      if (!this.selectedTask || (this.selectedTask && !this.settings.selectedTagIds.some(tag => this.selectedTask.tags.includes(tag)))) {
-        let tasksWithTag = this.incompleteTasks.find(task => this.settings.selectedTagIds.some(tag => task.tags.includes(tag)))
+      await this.updateSelectedTask()
+    },
+    
+    async removeTag ({ tagId }) {
+      await this.removeTagFilter({ tagId })
+      await this.updateSelectedTask()
+    },
+    
+    async updateSelectedTask () {
+      // Select some task with the selected tags
+      if (!this.selectedTask || (this.selectedTask && !(
+        (this.settings.filterOperator === 'or' && this.settings.selectedTagIds.some(tag => this.selectedTask.tags.includes(tag))) ||
+        (this.settings.filterOperator === 'and' && this.settings.selectedTagIds.every(tag => this.selectedTask.tags.includes(tag)))
+      ))) {
+        let tasksWithTag = this.settings.filterOperator === 'or'
+          ? this.incompleteTasks.find(task => this.settings.selectedTagIds.some(tag => task.tags.includes(tag)))
+          : this.incompleteTasks.find(task => this.settings.selectedTagIds.every(tag => task.tags.includes(tag)))
         if (!tasksWithTag) {
           let completedTasks = this.completedTasksFiltered
           completedTasks = this.tempState.showArchived ? completedTasks : completedTasks.filter(t => !t.archived)
-          tasksWithTag = completedTasks.find(task => this.settings.selectedTagIds.some(tag => task.tags.includes(tag)))
+          tasksWithTag = this.settings.filterOperator === 'or'
+            ? completedTasks.find(task => this.settings.selectedTagIds.some(tag => task.tags.includes(tag)))
+            : completedTasks.find(task => this.settings.selectedTagIds.every(tag => task.tags.includes(tag)))
         }
         if (tasksWithTag) {
           await this.selectTask({ taskId: tasksWithTag.id })

@@ -15,6 +15,7 @@
       id="tagActivity"
       :tag-id="tag.id"
       :label="tag.tagName"
+      :color="tag.color"
       :log="tagActivity(tempState.modalTagId)"
     />
   </b-modal>

@@ -75,7 +75,6 @@ autoUpdater.on('update-not-available', (info) => {
 
 autoUpdater.on('update-available', (info) => {
   log.info(info)
-  sendStatusToWindow('Update available: ' + info.version)
   const result = dialog.showMessageBoxSync({
     type: 'question',
     buttons: ['Download', 'Later'],

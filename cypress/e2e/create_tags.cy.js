@@ -91,6 +91,16 @@ describe('create tags', () => {
     })
   })
 
+  it('clicks the Tag button to show the Tag Activity Modal', () => {
+    // Act
+    cy.get('#selected-task-container').within(() => {
+      cy.get('div.tag > button.tag-name').contains(firstTagName).click()
+    })
+
+    // Assert
+    cy.get('#activityModal').contains(firstTagName).should('be.visible')
+  })
+
   it('drags one task above the other in the Tags Modal', () => {
     // Arrange
     cy.get('input[placeholder="add new tag"]').should('have.focus').type(secondTagName + '{enter}')

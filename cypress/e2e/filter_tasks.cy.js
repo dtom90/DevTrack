@@ -96,6 +96,66 @@ describe('filter tasks', () => {
     cy.get('#selected-task-container').should('not.be.visible')
   })
   
+  it('should clear selected task if multiple filters selected with and clause', () => {
+    // Act
+    cy.get('button > svg.fa-filter').click()
+    cy.contains('.dropdown-menu', 'Filter on:').within(() => {
+      cy.contains('button', firstTagName).click()
+    })
+    cy.contains('.dropdown-menu', 'Add to filter:').within(() => {
+      cy.contains('button', secondTagName).click()
+    })
+    
+    // Assert
+    cy.contains('#incomplete-task-list .task', 'My First Task').should('have.length', 0)
+    cy.contains('#incomplete-task-list .task', 'My Second Task').should('have.length', 0)
+    cy.get('#selected-task-container').should('not.be.visible')
+  })
+  
+  it('should update selected task if filter operator changed', () => {
+    // Arrange
+    cy.get('button > svg.fa-filter').click()
+    cy.contains('.dropdown-menu', 'Filter on:').within(() => {
+      cy.contains('button', firstTagName).click()
+    })
+    cy.contains('.dropdown-menu', 'Add to filter:').within(() => {
+      cy.contains('button', secondTagName).click()
+    })
+    
+    // Act
+    cy.contains('.dropdown-menu', 'Filtering on tasks with:').within(() => {
+      cy.contains('label', 'Any').first().click()
+    })
+    
+    // Assert
+    cy.contains('#incomplete-task-list .task', 'My First Task').should('have.length', 1)
+    cy.contains('#incomplete-task-list .task', 'My Second Task').should('have.length', 1)
+    cy.get('#title-section').scrollIntoView()
+    cy.get('#selected-task-container').contains('My First Task').should('exist')
+  })
+  
+  it('should update selected task on tag filter remove', () => {
+    // Arrange
+    cy.get('button > svg.fa-filter').click()
+    cy.contains('.dropdown-menu', 'Filter on:').within(() => {
+      cy.contains('button', firstTagName).click()
+    })
+    cy.contains('.dropdown-menu', 'Add to filter:').within(() => {
+      cy.contains('button', secondTagName).click()
+    })
+    
+    // Act
+    cy.contains('.dropdown-menu', 'Filtering on tasks with:').within(() => {
+      cy.get('button > svg.fa-times').first().click()
+    })
+    
+    // Assert
+    cy.contains('#incomplete-task-list .task', 'My First Task').should('have.length', 0)
+    cy.contains('#incomplete-task-list .task', 'My Second Task').should('have.length', 1)
+    cy.get('#title-section').scrollIntoView()
+    cy.get('#selected-task-container').contains('My Second Task').should('exist')
+  })
+  
   it('should continue timer even if selected task is cleared', () => {
     // Arrange
     cy.get('#selected-task-container button.tag-close > svg.fa-times').click()
@@ -113,8 +173,25 @@ describe('filter tasks', () => {
       cy.get('button > svg.fa-times').click()
     })
     cy.contains('#incomplete-task-list .task', 'My Second Task').click()
+    cy.get('#timer-display').scrollIntoView()
     cy.get('#selected-task-container button > svg.fa-pause').should('be.visible')
     cy.get('#countdown-container').contains('24:58')
     cy.get('#countdown-container').contains('24:57')
+  })
+  
+  it('should show activitiy modal for tag when selected', () => {
+    // Arrange
+    cy.get('button > svg.fa-filter').click()
+    cy.contains('.dropdown-menu', 'Filter on:').within(() => {
+      cy.contains('button', firstTagName).click()
+    })
+    
+    // Act
+    cy.contains('.dropdown-menu', 'Filtering on tasks with:').within(() => {
+      cy.contains('button', firstTagName).click()
+    })
+    
+    // Assert
+    cy.get('#activityModal').contains(firstTagName).should('be.visible')
   })
 })

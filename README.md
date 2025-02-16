@@ -29,11 +29,6 @@ yarn run web:dev
 ```
 yarn run lint
 ```
-#### Run end-to-end tests with [TestCafé](https://testcafe.devexpress.com/) (with dev or prod server)
-```
-yarn run test:e2e:dev
-yarn run test:e2e:prod
-```
 #### Run basic tests (lint, audit)
 ```
 yarn run test

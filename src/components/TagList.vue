@@ -27,17 +27,17 @@
           class="tag-name btn"
           :style="`backgroundColor: ${tags[tagId].color}`"
           :title="selectText"
-          @click="isModal ? viewActivityModal(tagId) : selectTag(tagId, $event)"
+          @click="selectTag ? selectTag(tagId, $event) : viewActivityModal(tagId)"
         >
           {{ tags[tagId].tagName }}
         </button>
         <button
-          v-if="removeTagFilter"
+          v-if="removeTag"
           class="tag-close btn"
           :style="`backgroundColor: ${tags[tagId].color}`"
           :title="removeText"
           aria-label="Close"
-          @click.stop="removeTagFilter({tagId})"
+          @click.stop="removeTag({tagId})"
         >
           <font-awesome-icon icon="times" />
         </button>
@@ -155,17 +155,17 @@ export default {
     },
     selectTag: {
       type: Function,
-      default: () => null
-    },
-    isModal: {
-      type: Boolean,
-      default: false
+      default: null
     },
     removeText: {
       type: String,
       default: 'Remove tag from task'
     },
-    removeTagFilter: {
+    removeTag: {
+      type: Function,
+      default: null
+    },
+    updateFilterOperator: {
       type: Function,
       default: null
     }
@@ -202,8 +202,11 @@ export default {
       get () {
         return this.$store.state.settings.filterOperator
       },
-      set (value) {
-        this.updateSetting({ key: 'filterOperator', value })
+      async set (value) {
+        await this.updateSetting({ key: 'filterOperator', value })
+        if (this.updateFilterOperator) {
+          this.updateFilterOperator()
+        }
       }
     }
   },

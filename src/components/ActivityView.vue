@@ -133,6 +133,10 @@ export default {
       type: String,
       default: null
     },
+    color: {
+      type: String,
+      default: '#2020FF'
+    },
     log: {
       type: Array,
       default: function () {
@@ -273,17 +277,20 @@ export default {
   }
 }
 
-function dailyChartData (that) {
-  // Initialize chartData
-  const chartData = {
+function initializeChartData (that) {
+  return {
     labels: [],
     datasets: [{
       label: that.label,
-      backgroundColor: '#2020FF',
+      backgroundColor: that.color,
       data: [],
       barThickness: 70
     }]
   }
+}
+
+function dailyChartData (that) {
+  const chartData = initializeChartData(that)
   
   // Add time spent per day and add to chartData
   let nextDay = null
@@ -322,15 +329,7 @@ function weeklyChartData (that) {
     }
   }
   
-  // Initialize chartData
-  const chartData = {
-    labels: [],
-    datasets: [{
-      label: that.label,
-      backgroundColor: '#2020FF',
-      data: []
-    }]
-  }
+  const chartData = initializeChartData(that)
   
   // Add time spent per week and add to chartData
   Object.keys(weeklyActivity).slice().sort((a, b) => {
@@ -358,17 +357,9 @@ function monthlyChartData (that) {
       monthlyActivity[month] = { log: [event] }
     }
   }
-
-  // Initialize chartData
-  const chartData = {
-    labels: [],
-    datasets: [{
-      label: that.label,
-      backgroundColor: '#2020FF',
-      data: []
-    }]
-  }
-
+  
+  const chartData = initializeChartData(that)
+  
   // Add time spent per week and add to chartData
   Object.keys(monthlyActivity).slice().sort((a, b) => {
     const [ay, am] = a.split('-').map(n => parseInt(n))

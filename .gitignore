@@ -1,8 +1,9 @@
 # Dependency files
 node_modules
 
-# Test fixture files
-tests/fixtures/sample*
+# Test files
+cypress/downloads/
+cypress/screenshots/
 
 # local env files
 .env.local
