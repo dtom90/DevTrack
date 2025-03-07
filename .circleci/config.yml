@@ -1,0 +1,246 @@
+version: 2.1
+
+orbs:
+  github-cli: circleci/github-cli@2.6.3
+  macos: circleci/macos@2.5.2
+  windows: circleci/windows@5
+
+jobs:
+  test-basic:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - checkout
+      - run:
+          name: Run packages audit and lint
+          command: ./docker/test_basic.sh
+  test-cypress:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - checkout
+      - run:
+          name: Build & run production Docker image
+          command: ./docker/prod.sh -d
+      - run:
+          name: Run cypress browser tests against production container
+          command: ./docker/test_cypress.sh
+      - run:
+          name: Stop production Docker contianer
+          command: docker stop pomotrack-prod
+
+  create-release:
+    docker:
+      - image: cimg/node:20.11
+    steps:
+      - checkout
+      - github-cli/setup:
+          token: GH_TOKEN
+      - run:
+          name: Extract version and create release
+          command: |
+            # Get the version from package.json
+            VERSION=$(node -p "require('./package.json').version")
+            
+            # Check if a release with this version already exists
+            if gh release view "v$VERSION" &> /dev/null; then
+              echo "Release v$VERSION already exists. Skipping release creation."
+              exit 1
+            fi
+            
+            # Get the latest commit message
+            COMMIT_MSG=$(git log -1 --pretty=%B)
+            
+            # Create a draft release using gh cli
+            echo "Creating new release v$VERSION"
+            gh release create "v$VERSION" \
+              --draft \
+              --title "$VERSION" \
+              --notes "## What's Changed
+            
+              $COMMIT_MSG"
+  
+  publish-release:
+    docker:
+      - image: cimg/node:20.11
+    steps:
+      - checkout
+      - github-cli/setup:
+          token: GH_TOKEN
+      - run:
+          name: Publish latest draft release
+          command: |
+            # Get the version from package.json
+            VERSION=$(node -p "require('./package.json').version")
+            
+            # Find and publish the draft release
+            gh release edit "v$VERSION" --draft=false
+  
+  build-web:
+    parameters:
+      target_repo:
+        type: string
+        default: "git@github.com:dtom90/PomoTrack.git"
+      target_branch:
+        type: string
+        default: "gh-pages"
+      ssh_fingerprint:
+        type: string
+        default: "SHA256:NDKPWa+kMya3u32KAI0pfVcWCqpaTWqK4Nzr+8Pegh8"
+      cname:
+        type: string
+        default: "pomotrack.app"
+    docker:
+      - image: cimg/node:18.20.5
+    steps:
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - add_ssh_keys:
+          fingerprints:
+            - << parameters.ssh_fingerprint >>
+      - checkout
+      - run:
+          name: Build GitHub Pages
+          command: ./docker/gh-pages.sh
+      - run:
+          name: Update CNAME if needed
+          command: |
+            echo "<< parameters.cname >>" > dist_web/CNAME
+            echo "CNAME set to: << parameters.cname >>"
+      - run:
+          name: Publish to GitHub Pages
+          command: |
+            npm install gh-pages@6.3.0 -g
+            git config user.email "dtom90@users.noreply.github.com"
+            git config user.name "David Thomason"
+            npx gh-pages --dist dist_web --dotfiles --no-history --message "GitHub Pages" --repo << parameters.target_repo >> --branch << parameters.target_branch >>
+
+  build-mac:
+    macos:
+      xcode: 16.1.0
+    steps:
+      - macos/install-rosetta
+      - run:
+          name: Install NVM
+          command: |
+            set +e
+            wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.1/install.sh | bash
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+      - checkout
+      - run:
+          name: Install Node
+          command: |
+            set +e
+            nvm install v18.20.5
+            nvm alias default v18.20.5
+      - run:
+          name: Install dependencies
+          command: |
+            set +e
+            pip install setuptools
+            yarn
+      - run:
+          name: Reset xcode selection
+          command: sudo xcode-select -r
+      - run:
+          name: Build macOS app
+          command: yarn run electron:release:mac
+
+  build-windows:
+    executor:
+      name: windows/default
+      size: medium
+    steps:
+      - checkout
+      - run:
+          name: Install NVM
+          command: |
+            $webClient = New-Object System.Net.WebClient
+            $webClient.DownloadFile("https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh", "$env:TEMP\install.sh")
+            bash $env:TEMP\install.sh
+      - run:
+          name: Install Node
+          command: |
+            . ~/.nvm/nvm.sh
+            nvm install v18.20.5
+            nvm use v18.20.5
+            npm install -g yarn
+      - run:
+          name: Install dependencies
+          command: |
+            . ~/.nvm/nvm.sh
+            nvm use v18.20.5
+            yarn install
+      - run:
+          name: Build Windows app
+          command: |
+            . ~/.nvm/nvm.sh
+            nvm use v18.20.5
+            yarn run electron:release:win
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - test-basic:
+          filters:
+            branches:
+              ignore:
+                - master
+                - gh-pages
+      - test-cypress:
+          filters:
+            branches:
+              ignore:
+                - master
+                - gh-pages
+  release-workflow:
+    jobs:
+      - create-release:
+          filters:
+            branches:
+              only: master
+      - build-web:
+          filters:
+            branches:
+              only:
+                - master
+      - build-mac:
+          requires:
+            - create-release
+          filters:
+            branches:
+              only:
+                - master
+      - build-windows:
+          requires:
+            - create-release
+          filters:
+            branches:
+              only:
+                - master
+      - publish-release:
+          requires:
+            - build-mac
+            - build-windows
+          filters:
+            branches:
+              only: master
+  
+  # New workflow for DevTrack gh-pages deployment
+  deploy-to-devtrack:
+    jobs:
+      - build-web:
+          name: deploy-to-devtrack
+          target_repo: "git@github.com:dtom90/DevTrack.git"
+          ssh_fingerprint: "SHA256:yU3fmPL2vH/VjtNkLb6dgI/JKV7MDY5Dppc71sJMouE"
+          cname: "devtrack.app"
+          filters:
+            branches:
+              only: develop
